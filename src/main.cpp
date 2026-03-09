@@ -1,7 +1,5 @@
 // Includes global variables and librarys that the OLED display uses
 #include "main.h"
-#include <Arduino.h>
-#include <ittiot.h>
 #include <FBJS_Config.h>
 #include <FirebaseJson.h>
 
@@ -12,17 +10,12 @@
  
 // Change it according to the real name of the microcontroller where DHT shield is connected
 #define MQTT_ROOT_TOPIC_PREFIX "ESP14"
-#define FILE_UPLOAD_TOPIC_PREFIX"/file"
+#define FILE_UPLOAD_TOPIC_PREFIX "/file"
 
 // OLED reset pin is GPIO0
 #define OLED_RESET 0
 
- 
-// Define variables to store humidity and temperature values
-float h;
-float t;
-
-UploadSession uploadData;
+UploadSession uploadData = {0};
 unsigned long lastUpdateTime = 0;
 int currentFileIdx = 0;
  
@@ -171,7 +164,6 @@ UploadSession* handleUploadInitMessage(String message) {
 }
 
 bool generateFileUploadData(UploadSession* session) {
-  float file_size_left_mb = session->total_size_mb;
   session->files = new FileUploadData[session->num_of_files];
   float* weights = new float[session->num_of_files];
   float total_weight = 0;
@@ -183,15 +175,19 @@ bool generateFileUploadData(UploadSession* session) {
   }
 
   float cumulative_size_mb = 0;
+  char buffer[256];
   for (int i = 0; i < session->num_of_files - 1; i++) {
     session->files[i].file_size_mb = (weights[i] / total_weight) * session->total_size_mb;
-    session->files[i].file_name = "file_" + String(i + 1) + ".dat";
+    snprintf(buffer, sizeof(buffer), "file_%d.dat", i + 1);
+    session->files[i].file_name = buffer;
     session->files[i].uploaded_mb = 0.0;
     cumulative_size_mb += session->files[i].file_size_mb;
+    buffer[0] = '\0';
   }
   // Set the size of the last file to the remaining size
   session->files[session->num_of_files - 1].file_size_mb = session->total_size_mb - cumulative_size_mb;
-  session->files[session->num_of_files - 1].file_name = "file_" + String(session->num_of_files) + ".dat";
+  snprintf(buffer, sizeof(buffer), "file_%d.dat", session->num_of_files);
+  session->files[session->num_of_files - 1].file_name = buffer;
   session->files[session->num_of_files - 1].uploaded_mb = 0.0;
   
   delete[] weights;

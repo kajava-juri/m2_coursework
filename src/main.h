@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
+#include <Arduino.h>
+#include <ittiot.h>
 
 #define FILE_REPORT_STATUS_FREQUENCY_MS 200
 
@@ -14,6 +16,12 @@ struct UploadSessionState {
     bool connected_flag;
 };
 
+struct FileUploadData {
+    std::string file_name;
+    float file_size_mb;
+    float uploaded_mb;
+};
+
 struct UploadSession {
     float total_size_mb;
     float uploaded_mb;
@@ -23,13 +31,7 @@ struct UploadSession {
     float speed_mbps;
     FileUploadData* files;
     UploadSessionState session_state;
-} uploadData;
-
-struct FileUploadData {
-    std::string file_name;
-    float file_size_mb;
-    float uploaded_mb;
-} fileUploadData;
+};
 
 // void handleUploadInitialization(UploadSession& session) {
 //     // Initialize upload data
