@@ -25,8 +25,7 @@ ESP1 listens to this topic, when received - triggers the file upload process
 ``` json
 {
     "total_size_mb": 1024,
-    "num_of_files": 10,
-    "session_id": <timestamp in millis>
+    "num_of_files": 10
 }
 ```
 
