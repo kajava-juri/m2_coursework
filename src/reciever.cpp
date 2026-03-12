@@ -94,7 +94,7 @@ void iot_connected()
   String startTopic = String(FILEREPORTER) + "/file/upload/start";
   iot.subscribe(startTopic.c_str());
 
-  String statusTopic = String("file/upload/+/status");
+  String statusTopic = String(FILEREPORTER) + String("/file/upload/+/status");
   iot.subscribe(statusTopic.c_str());
 
   Serial.println("Subscribed to upload topics");
@@ -105,7 +105,7 @@ void iot_connected()
 // ===============================
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("LED Matrix Upload Receiver");
 
   iot.setConfig("wname", WIFI_NAME);

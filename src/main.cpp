@@ -9,7 +9,7 @@
 #define WIFI_PASSWORD ""
 
 // Change it according to the real name of the microcontroller where DHT shield is connected
-#define MQTT_ROOT_TOPIC_PREFIX "ESP11"
+#define MQTT_ROOT_TOPIC_PREFIX "ESP36"
 #define FILE_UPLOAD_TOPIC_PREFIX "file"
 
 // OLED reset pin is GPIO0
@@ -225,7 +225,7 @@ void sendConfigToESP2()
   Serial.println("Sent config to ESP2:");
   Serial.println(configMsg);
 
-  String readyTopic = String(MQTT_ROOT_TOPIC_PREFIX) + "/" + FILE_UPLOAD_TOPIC_PREFIX + "/upload/" + String(uploadData.session_id) + "/ready";
+  String readyTopic = "+/" + String(MQTT_ROOT_TOPIC_PREFIX) + "/" + FILE_UPLOAD_TOPIC_PREFIX + "/upload/" + String(uploadData.session_id) + "/ready";
   iot.subscribe(readyTopic.c_str());
   Serial.print("Subscribed to: ");
   Serial.println(readyTopic);
@@ -233,7 +233,7 @@ void sendConfigToESP2()
   uploadData.session_state.connected_flag = true;
 }
 
-void sendFileStatus(int fileIndex)
+void sendFileStatus(int fileIndex, float deltaUploadedMb)
 {
   if (fileIndex < 0 || fileIndex >= uploadData.num_of_files)
   {
@@ -246,6 +246,7 @@ void sendFileStatus(int fileIndex)
   json.add("file_name", file.file_name.c_str());
   json.add("uploaded_mb", file.uploaded_mb);
   json.add("total_size", file.file_size_mb);
+  json.add("delta_uploaded_mb", deltaUploadedMb);
 
   String statusMsg;
   json.toString(statusMsg, true);
@@ -255,6 +256,12 @@ void sendFileStatus(int fileIndex)
 
   Serial.print("Status: ");
   Serial.println(statusMsg);
+}
+
+void handleUploadSessionEnd()
+{
+  String topic = String(FILE_UPLOAD_TOPIC_PREFIX) + "/upload/" + String(uploadData.session_id) + "/end";
+  iot.publishMsg(topic.c_str(), "Upload complete");
 }
 
 void handleUploadStateMachine()
@@ -294,7 +301,7 @@ void handleUploadStateMachine()
       }
 
       // regular status report
-      sendFileStatus(currentFileIdx);
+      sendFileStatus(currentFileIdx, mbUplaoded);
 
       // if current file is complete
       if (currentFile.uploaded_mb >= currentFile.file_size_mb)
@@ -309,6 +316,7 @@ void handleUploadStateMachine()
         if (currentFileIdx >= uploadData.num_of_files)
         {
           iot.log("All files uploaded! Returning to IDLE");
+          handleUploadSessionEnd();
           uploadData.session_state.value = IDLE;
           uploadData.session_state.connected_flag = false;
           currentFileIdx = 0;
